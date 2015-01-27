@@ -7,6 +7,7 @@ Created on Wed Jan 21 21:15:13 2015
 
 import pandas
 
+# added something here
 def _sw(df, up_rows=10, down_rows=5, left_cols=4, right_cols=3, return_df=False):
     ''' display df data at four corners
         A,B (up_pt)
