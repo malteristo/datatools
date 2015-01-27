@@ -80,3 +80,5 @@ def _sw(df, up_rows=10, down_rows=5, left_cols=4, right_cols=3, return_df=False)
 
     return (df if return_df else None)
 pandas.DataFrame.sw = _sw  #add a method to DataFrame class
+
+# I changed some stuff
