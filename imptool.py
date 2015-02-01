@@ -15,14 +15,15 @@ import pandas as pd
 pd.set_option('display.notebook_repr_html', False)
 
 # Folder containing sub-folders with PP data
-BASEDIR = '/home/grobi/Dropbox/Data'
+BASEDIR = '/home/grobi/Dropbox/data'
 DATAFOLDER = 'tno2'
 DATADIR = os.path.join(BASEDIR, DATAFOLDER, 'eout')
 # Folder containing information read in from text files
-READ_IN_FILES = '/home/grobi/Dropbox/documents/MATLAB/TNO2/helpfiles'
+READ_IN_FILES = os.path.join(BASEDIR, DATAFOLDER, 'helpfiles')
 RANDI = pd.read_csv(os.path.join(READ_IN_FILES, 'randi.csv'), sep=';', header=None)
+COLHEADS = pd.Series.from_csv(os.path.join(READ_IN_FILES, 'newheads.csv')).index
 # Where the data is stored after it is read
-HDFSTOR = '/home/grobi/Dropbox/Data/tno2/dstor.h5'
+HDFSTOR = '/home/grobi/Dropbox/data/tno2/dstor.h5'
 
 # PIMP
 def eimp(ddir = DATADIR, pp = []):
@@ -53,7 +54,7 @@ def dimp(store, ddir, p, filename = ''):
     """
     Expects a folder and imports specified files from that folder
     returns a dataframe or a series of dataframe objects with the delected data from the PP in that folder
-    """
+    """  
     
     pdir = os.path.join(ddir, str(p))  
     
@@ -69,7 +70,9 @@ def dimp(store, ddir, p, filename = ''):
                 print 'Reading file:', fname
                 pnr, rnr = fname_read(fname)
                 tnr = run2trial(pnr,rnr) #find trial number for run number
-                store[os.path.join(str(pnr),str(tnr))] = pd.DataFrame.from_csv(os.path.join(pdir, fname), header = 0, sep = ';').reset_index()
+                df = pd.DataFrame.from_csv(os.path.join(pdir, fname), header = 0, sep = ';').reset_index()
+                df.columns = COLHEADS                
+                store[os.path.join(str(pnr),str(tnr))] = df
                 # break # premature break
 
     return store
@@ -91,5 +94,5 @@ def fname_read(fname):
     rnr -= 1
     
     return (pnr, rnr)
-
+     
 store = eimp()
