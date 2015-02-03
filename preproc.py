@@ -23,6 +23,7 @@ COLHEADS = pd.Series.from_csv(os.path.join(READ_IN_FILES, 'newheads.csv')).index
 # Where the data is stored after it is read
 HDFSTOR = '/home/grobi/Dropbox/data/tno2/dstor.h5'
 
+# get the column heads to rewrite them and load the changed csv in later in the process
 def get_colheads(df, d = READ_IN_FILES):    
     pd.Series(df.columns.values).to_csv(os.path.join(d, 'oldheads.csv'))
     print 'Column heads written to', os.path.join(d, 'oldheads.csv')
