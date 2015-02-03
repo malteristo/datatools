@@ -22,8 +22,25 @@ DATADIR = os.path.join(BASEDIR, DATAFOLDER, 'eout')
 READ_IN_FILES = os.path.join(BASEDIR, DATAFOLDER, 'helpfiles')
 RANDI = pd.read_csv(os.path.join(READ_IN_FILES, 'randi.csv'), sep=';', header=None)
 COLHEADS = pd.DataFrame.from_csv(os.path.join(READ_IN_FILES, 'newheads.csv'), header=None)
+GT = pd.DataFrame.from_csv(os.path.join(READ_IN_FILES, 'grantable.csv'))
 # Where the data is stored after it is read
 HDFSTOR = '/home/grobi/Dropbox/data/tno2/dstor.h5'
+
+### PREPROCESSING ###
+
+# get the column heads to rewrite them and load the changed csv in later in the process
+def get_colheads(df, d = READ_IN_FILES):    
+    pd.Series(df.columns.values).to_csv(os.path.join(d, 'oldheads.csv'))
+    print 'Column heads written to', os.path.join(d, 'oldheads.csv')
+
+# grantable is where all the output from the analysis scripts is gathered for statistical post proc analysis
+# the gran table as a dubble index with ppnumber and trialnumber (ppnumber * trialnumber = number of rows)
+def grantable(pp,t):
+    gt = pd.DataFrame()
+    
+    return gt
+    
+### IMPORT DATA ###
 
 # PIMP
 def eimp(ddir = DATADIR, pp = []):
@@ -72,7 +89,7 @@ def dimp(store, ddir, p, filename = ''):
                 tnr = run2trial(pnr,rnr) #find trial number for run number
                 df = pd.DataFrame.from_csv(os.path.join(pdir, fname), header = 0, sep = ';').reset_index()
                 df.columns = COLHEADS.index
-                store[os.path.join('p' + str(pnr), 'r' + str(tnr))] = df
+                store[os.path.join('p' + str(pnr), 't' + str(tnr))] = df
                 # break # premature break
 
     return store
@@ -86,10 +103,20 @@ def fname_read(fname):
     pnr -= 1 #adjust for python indexing
     rnr -= 1
     return (pnr, rnr)
-    
+
 store = eimp()
-        
-#==============================================================================
-# for key in store.keys(): # for single df slect store[store.keys()[0]]
-#     print store[key]
-#==============================================================================
+
+### DATAFRAME OPERATIONS ###
+
+# higher order function that applies different function to selected dataframes
+# chooses drivers and trials (between or within participants) depending on condition to be analized
+for key in store.keys():
+    print store[key]
+
+def markers(df):
+    marker_context_list = pd.DataFrame()
+    for line in df.values:
+        if line[3] != -9999:
+            marker_context_list[str(line[4])] = line
+            marker_context_list.index = COLHEADS.index
+    return marker_context_list
