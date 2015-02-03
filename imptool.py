@@ -34,6 +34,9 @@ class Gtab:
     Grantable is where all the output from the analysis scripts is gathered for statistical post proc analysis
     The gran table as a dubble index with ppnumber and trialnumber (ppnumber * trialnumber = number of rows)
     
+    The Gtab object is given to functions that extract data from the dataset
+    these functions add new colums to the Gtab
+    
     Attributes:
         table: the actual pandas DataFrame
         pp: number of participants in the table
@@ -58,15 +61,21 @@ class Gtab:
 #%%
 ### PREPROCESSING ###
 
-# get the column heads to rewrite them and load the changed csv in later in the process
 def get_colheads(df, d = READ_IN_FILES):    
+    """
+    get the column heads to rewrite them and load the changed csv in later in the process
+    """
+    
     pd.Series(df.columns.values).to_csv(os.path.join(d, 'oldheads.csv'))
     print 'Column heads written to', os.path.join(d, 'oldheads.csv')
 
-
+#%%
 ### IMPORT DATA ###
 
 def eimp(ddir = DATADIR, pp = []):
+    """
+    TEXT
+    """
 
     # report the directory where data is imported from
     print 'Importing data from', ddir
@@ -129,14 +138,19 @@ def fname_read(fname):
 
 store = eimp()
 
+#%%
 ### DATAFRAME OPERATIONS ###
 
-# higher order function that applies different function to selected dataframes
-# chooses drivers and trials (between or within participants) depending on condition to be analized
+
 for key in store.keys():
     print store[key]
 
 def markers(df):
+    """
+    higher order function that applies different function to selected dataframes
+    chooses drivers and trials (between or within participants) depending on condition to be analized
+    """
+    
     marker_context_list = pd.DataFrame()
     for line in df.values:
         if line[3] != -9999:
