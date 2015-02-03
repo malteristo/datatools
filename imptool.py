@@ -26,6 +26,36 @@ GT = pd.DataFrame.from_csv(os.path.join(READ_IN_FILES, 'grantable.csv'))
 # Where the data is stored after it is read
 HDFSTOR = '/home/grobi/Dropbox/data/tno2/dstor.h5'
 
+#%%
+### GTAB CLASS ###
+
+class Gtab:
+    """ 
+    Grantable is where all the output from the analysis scripts is gathered for statistical post proc analysis
+    The gran table as a dubble index with ppnumber and trialnumber (ppnumber * trialnumber = number of rows)
+    
+    Attributes:
+        table: the actual pandas DataFrame
+        pp: number of participants in the table
+        tnr: number of trials per participant
+    """
+    def __init__(self, pnr, tnr):
+        self.pp = pnr
+        self.trials = tnr        
+        
+        p1 = [[i] * self.trials for i in range(1,self.pp+1)]
+        p2 = [inner for outer in p1 for inner in outer] # flatten list of lists
+        t1 = range(1,self.trials+1) * self.pp
+        index = pd.MultiIndex.from_arrays([p2, t1], names=['pp', 'trial'])
+        self.table = pd.DataFrame(index=index)
+    
+    def get_table(self):
+        return self.table
+    
+#    def add_col(self, name, data):
+#        self.table[str(name)] = data
+        
+#%%
 ### PREPROCESSING ###
 
 # get the column heads to rewrite them and load the changed csv in later in the process
@@ -33,16 +63,9 @@ def get_colheads(df, d = READ_IN_FILES):
     pd.Series(df.columns.values).to_csv(os.path.join(d, 'oldheads.csv'))
     print 'Column heads written to', os.path.join(d, 'oldheads.csv')
 
-# grantable is where all the output from the analysis scripts is gathered for statistical post proc analysis
-# the gran table as a dubble index with ppnumber and trialnumber (ppnumber * trialnumber = number of rows)
-def grantable(pp,t):
-    gt = pd.DataFrame()
-    
-    return gt
-    
+
 ### IMPORT DATA ###
 
-# PIMP
 def eimp(ddir = DATADIR, pp = []):
 
     # report the directory where data is imported from
