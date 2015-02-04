@@ -15,10 +15,12 @@ DATADIR = os.path.join(BASEDIR, DATAFOLDER, 'eout')
 HDFSTOR = os.path.join(BASEDIR, DATAFOLDER, 'dstor.h5')
 # Folder containing information read in from text files
 READ_IN_FILES = os.path.join(BASEDIR, DATAFOLDER, 'helpfiles')
+# Load lookup tables
 RANDI = pd.read_csv(os.path.join(READ_IN_FILES, 'randi.csv'),
                     sep=';',
                     header=None)
-
+COLHEADS = pd.DataFrame.from_csv(os.path.join(READ_IN_FILES, 'newheads.csv'),
+                                 header=None)
 #%% GTAB CLASS
 
 class Gtab:
@@ -52,7 +54,7 @@ class Gtab:
     def add_col(self, name, data):
         self.table[str(name)] = data
 
-#%% IMPORT DATA
+#%% STORE CLASS
 
 class Store:
     """
@@ -118,8 +120,7 @@ class Store:
                     df = pd.DataFrame.from_csv(os.path.join(pdir, fname),
                                                header = 0,
                                                sep = ';').reset_index()
-                    colheads = pd.DataFrame.from_csv(os.path.join(READ_IN_FILES, 'newheads.csv'), header=None)
-                    df.columns = colheads.index
+                    df.columns = COLHEADS.index
 
                     pnr, rnr = fname_read(fname)
                     tnr = run2trial(pnr,rnr) #find trial number for run number
@@ -192,5 +193,5 @@ def markers(df):
     for line in df.values:
         if line[3] != -9999:
             marker_context_list[str(line[4])] = line
-            marker_context_list.index = COLHEADS.index
+            marker_context_list.index = df.columns
     return marker_context_list
