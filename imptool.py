@@ -72,7 +72,7 @@ class Store:
             print "Loading data from disk"
         else:
             self.store = pd.HDFStore(self.ptf)
-            print "Creating new file in", self.ptf
+            print "Creating new HDFStore file in", self.ptf
             
             self.eimp()
     
@@ -97,10 +97,8 @@ class Store:
         for p in sorted(plst):
             print 'Parsing data of participant folder %d' % (p)
     
-            self.store = self.dimp(ddir, p)
+            self.dimp(ddir, p)
             # break # preamture break
-        
-        self.store.close()
 
     def dimp(self, ddir, p, filename = ''):
         """
@@ -119,20 +117,26 @@ class Store:
                     continue
                 else:
                     print 'Reading file:', fname
-                    pnr, rnr = fname_read(fname)
-                    tnr = run2trial(pnr,rnr) #find trial number for run number
                     df = pd.DataFrame.from_csv(os.path.join(pdir, fname),
                                                header = 0,
                                                sep = ';').reset_index()
                     df.columns = COLHEADS.index
+
+                    pnr, rnr = fname_read(fname)
+                    tnr = run2trial(pnr,rnr) #find trial number for run number
                     self.store[os.path.join('p' + str(pnr), 't' + str(tnr))] = df
                     # break # premature break
     
-    def gdf(self, pnr, tnr):
+    def gdf(self, pnr, tnr, run = False):
         """
         returns the df under the given pnr and tnr
         """
-        key = os.path.join('p' + str(pnr), 't' + str(tnr))
+        if run:
+            nr = trial2run(pnr, tnr)
+        else:
+            nr = tnr
+        
+        key = os.path.join('p' + str(pnr), 't' + str(nr))
         return self.store[key]
     
     def idf(self):
@@ -142,6 +146,12 @@ class Store:
         for key in self.store.keys():
             return self.store[key]
             break
+        
+    def gimme(self):
+        """
+        Provides direct access to the HDFStore object
+        """
+        return self.store
 
 #%% HELPER FUCTIONS
 
@@ -155,13 +165,15 @@ def get_colheads(df, d = READ_IN_FILES):
     print 'Column heads written to', os.path.join(d, 'oldheads.csv')
 
 def run2trial(pnr, rnr, randi = RANDI):
-    return randi.ix[pnr,rnr]
+    return randi.ix[pnr-1,rnr-1]
+    
+def trial2run(pnr, tnr, randi = RANDI):
+    return list(randi[randi == tnr-1].stack().index)[pnr-1][1]
+    # adjusted for python indexing (pnr - 1, rnr -1)
 
 def fname_read(fname):
     pnr = int(os.path.splitext(fname)[0][2:4]) # pnr (same as p)
     rnr = int(os.path.splitext(fname)[0][-2:]) # rnr = run number
-    pnr -= 1 #adjust for python indexing
-    rnr -= 1
     return (pnr, rnr)
 
 def markers(df):
