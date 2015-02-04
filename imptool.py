@@ -124,24 +124,27 @@ class Store:
 
                     pnr, rnr = fname_read(fname)
                     tnr = run2trial(pnr,rnr) #find trial number for run number
-                    self.store[os.path.join('p' + str(pnr), 't' + str(tnr))] = df
+                    key = os.path.join('p%02d' % (pnr), 't%02d' % (tnr))
+                    print 'Writing to store:', key
+                    self.store[key] = df
                     # break # premature break
     
-    def gdf(self, pnr, tnr, run = False):
+    def gdf(self, pnr, tnr):
         """
-        returns the df under the given pnr and tnr
+        get_data_frame: returns the df under the given pnr and tnr
         """
-        if run:
-            nr = trial2run(pnr, tnr)
-        else:
-            nr = tnr
-        
-        key = os.path.join('p' + str(pnr), 't' + str(nr))
+        key = os.path.join('p%02d' % (pnr), 't%02d' % (tnr))
         return self.store[key]
     
-    def idf(self):
+    def gfn(self, pnr, tnr):
         """
-        returns an iterator over all the keys in self.store
+        get_file_name: returns the file name that belings to the df
+        """
+        print fname_write(pnr,trial2run(pnr,tnr))
+    
+    def ist(self):
+        """
+        iterate store: returns an iterator over all the keys in self.store
         """
         for key in self.store.keys():
             return self.store[key]
@@ -168,13 +171,16 @@ def run2trial(pnr, rnr, randi = RANDI):
     return randi.ix[pnr-1,rnr-1]
     
 def trial2run(pnr, tnr, randi = RANDI):
-    return list(randi[randi == tnr-1].stack().index)[pnr-1][1]
+    return list(randi[randi == tnr].stack().index)[pnr-1][1]+1
     # adjusted for python indexing (pnr - 1, rnr -1)
 
 def fname_read(fname):
     pnr = int(os.path.splitext(fname)[0][2:4]) # pnr (same as p)
     rnr = int(os.path.splitext(fname)[0][-2:]) # rnr = run number
-    return (pnr, rnr)
+    return pnr, rnr
+    
+def fname_write(pnr, rnr):
+    return 'pp%02dr%02d.csv' % (pnr, rnr)
 
 def markers(df):
     """
