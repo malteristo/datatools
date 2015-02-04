@@ -15,11 +15,11 @@ DATADIR = os.path.join(BASEDIR, DATAFOLDER, 'eout')
 HDFSTOR = os.path.join(BASEDIR, DATAFOLDER, 'dstor.h5')
 # Folder containing information read in from text files
 READ_IN_FILES = os.path.join(BASEDIR, DATAFOLDER, 'helpfiles')
-# Load lookup tables
-RANDI = pd.read_csv(os.path.join(READ_IN_FILES, 'randi.csv'),
+# Load global lookup tables
+randi = pd.read_csv(os.path.join(READ_IN_FILES, 'randi.csv'),
                     sep=';',
                     header=None)
-COLHEADS = pd.DataFrame.from_csv(os.path.join(READ_IN_FILES, 'newheads.csv'),
+colheads = pd.DataFrame.from_csv(os.path.join(READ_IN_FILES, 'newheads.csv'),
                                  header=None)
 #%% GTAB CLASS
 
@@ -120,7 +120,7 @@ class Store:
                     df = pd.DataFrame.from_csv(os.path.join(pdir, fname),
                                                header = 0,
                                                sep = ';').reset_index()
-                    df.columns = COLHEADS.index
+                    df.columns = colheads.index
 
                     pnr, rnr = fname_read(fname)
                     tnr = run2trial(pnr,rnr) #find trial number for run number
@@ -167,10 +167,10 @@ def get_colheads(df, d = READ_IN_FILES):
     pd.Series(df.columns.values).to_csv(os.path.join(d, 'oldheads.csv'))
     print 'Column heads written to', os.path.join(d, 'oldheads.csv')
 
-def run2trial(pnr, rnr, randi = RANDI):
+def run2trial(pnr, rnr, randi = randi):
     return randi.ix[pnr-1,rnr-1]
     
-def trial2run(pnr, tnr, randi = RANDI):
+def trial2run(pnr, tnr, randi = randi):
     return list(randi[randi == tnr].stack().index)[pnr-1][1]+1
     # adjusted for python indexing (pnr - 1, rnr -1)
 
@@ -193,5 +193,5 @@ def markers(df):
     for line in df.values:
         if line[3] != -9999:
             marker_context_list[str(line[4])] = line
-            marker_context_list.index = df.columns
+            marker_context_list.index = colheads.index
     return marker_context_list
