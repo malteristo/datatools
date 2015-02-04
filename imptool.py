@@ -11,15 +11,13 @@ pd.set_option('display.notebook_repr_html', False)
 BASEDIR = '/home/grobi/Dropbox/data'
 DATAFOLDER = 'tno2'
 DATADIR = os.path.join(BASEDIR, DATAFOLDER, 'eout')
+# Where the data is stored after it is read in
+HDFSTOR = os.path.join(BASEDIR, DATAFOLDER, 'dstor.h5')
 # Folder containing information read in from text files
 READ_IN_FILES = os.path.join(BASEDIR, DATAFOLDER, 'helpfiles')
 RANDI = pd.read_csv(os.path.join(READ_IN_FILES, 'randi.csv'),
                     sep=';',
                     header=None)
-COLHEADS = pd.DataFrame.from_csv(os.path.join(READ_IN_FILES, 'newheads.csv'),
-                                 header=None)
-# Where the data is stored after it is read in
-HDFSTOR = '/home/grobi/Dropbox/data/tno2/dstor.h5'
 
 #%% GTAB CLASS
 
@@ -120,7 +118,8 @@ class Store:
                     df = pd.DataFrame.from_csv(os.path.join(pdir, fname),
                                                header = 0,
                                                sep = ';').reset_index()
-                    df.columns = COLHEADS.index
+                    colheads = pd.DataFrame.from_csv(os.path.join(READ_IN_FILES, 'newheads.csv'), header=None)
+                    df.columns = colheads.index
 
                     pnr, rnr = fname_read(fname)
                     tnr = run2trial(pnr,rnr) #find trial number for run number
