@@ -122,10 +122,20 @@ class Store:
                                                sep = ';').reset_index()
                     df.columns = colheads.index
 
+                    # compute additional columns if necessary
+                    # tgfrontleft
+                    ncol_tgap(df, 'fdtrav', 'dtrav', 'spd', 'tgfrontleft')
+
+#                    tgfrontright
+#                    tgfront
+#                    tgrear, neg
+#                    tgrearleft, neg
+#                    tgrearright, neg
+                    
                     pnr, rnr = fname_read(fname)
                     tnr = run2trial(pnr,rnr) #find trial number for run number
                     key = os.path.join('p%02d' % (pnr), 't%02d' % (tnr))
-                    print 'Writing to store:', key
+                    # print 'Writing to store:', key
                     self.store[key] = df
                     # break # premature break
     
@@ -181,6 +191,12 @@ def fname_read(fname):
     
 def fname_write(pnr, rnr):
     return 'pp%02dr%02d.csv' % (pnr, rnr)
+    
+def ms2kmh(ms):
+    return ms * 3.6
+
+def kmh2ms(kmh):
+    return kmh / 3.6
 
 def markers(df):
     """
@@ -188,10 +204,26 @@ def markers(df):
     chooses drivers and trials (between or within participants)
     depending on condition to be analized
     """
-    
     marker_context_list = pd.DataFrame()
     for line in df.values:
         if line[3] != -9999:
             marker_context_list[str(line[4])] = line
             marker_context_list.index = colheads.index
     return marker_context_list
+
+def ncol_tgap(df, dtravlead, dtravfol, spdfol, new_col_name, neg=False):
+    """
+    Expects a df with columns for the:
+    - distance traveled of the leading vehicle (m)
+    - distance traveled of the following vehicle (m)
+    - speed of the following vehicle in (m/s)
+    Computes the time gap from these values
+    and saves it in a new column in the df
+    neg=True to make column values negative
+    todo: account for vehicle sizes?
+    """
+    new_col = (df[dtravlead] - df[dtravfol]) / df[spdfol]
+    if neg:
+        new_col = -new_col
+    df[new_col_name] = new_col
+    return df
