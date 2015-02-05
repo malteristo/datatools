@@ -124,13 +124,17 @@ class Store:
 
                     # compute additional columns if necessary
                     # tgfrontleft
-                    ncol_tgap(df, 'fdtrav', 'dtrav', 'spd', 'tgfrontleft')
-
-#                    tgfrontright
-#                    tgfront
-#                    tgrear, neg
-#                    tgrearleft, neg
-#                    tgrearright, neg
+                    ncol_tgap(df, 'lfdtrav', 'dtrav', 'spd', 'tgfrontleft')
+                    # tgfrontright
+                    ncol_tgap(df, 'rfdtrav', 'dtrav', 'spd', 'tgfrontright')
+                    #tgfront
+                    ncol_tgap(df, 'fdtrav', 'dtrav', 'spd', 'tgfront')
+                    #tgrear, neg
+                    ncol_tgap(df, 'dtrav', 'rdtrav', 'rspd', 'tgrear', neg=True)
+                    #tgrearleft, neg
+                    ncol_tgap(df, 'dtrav', 'lrdtrav', 'lrspd', 'tgrearleft', neg=True)
+                    #tgrearright, neg
+                    ncol_tgap(df, 'dtrav', 'rrdtrav', 'rrspd', 'tgrearright', neg=True)
                     
                     pnr, rnr = fname_read(fname)
                     tnr = run2trial(pnr,rnr) #find trial number for run number
