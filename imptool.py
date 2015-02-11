@@ -16,11 +16,12 @@ HDFSTOR = os.path.join(BASEDIR, DATAFOLDER, 'dstor.h5')
 # Folder containing information read in from text files
 READ_IN_FILES = os.path.join(BASEDIR, DATAFOLDER, 'helpfiles')
 # Load global lookup tables
-randi = pd.read_csv(os.path.join(READ_IN_FILES, 'randi.csv'),
+RANDI = pd.read_csv(os.path.join(READ_IN_FILES, 'randi.csv'),
                     sep=';',
                     header=None)
-colheads = pd.DataFrame.from_csv(os.path.join(READ_IN_FILES, 'newheads.csv'),
+COLHEADS = pd.DataFrame.from_csv(os.path.join(READ_IN_FILES, 'newheads.csv'),
                                  header=None)
+SKIP_LIST = ['_data', '_env', 'r00']
 #%% GTAB CLASS
 
 class Gtab:
@@ -42,10 +43,18 @@ class Gtab:
         self.pp = pnr
         self.trials = tnr        
         
+        # create the index for the table
+        # for each pp and trail combination
+        
+        # put each pp "trial" times in the list 
         p1 = [[i] * self.trials for i in range(1,self.pp+1)]
-        p2 = [inner for outer in p1 for inner in outer] # flatten list of lists
+        # flatten list of lists p1        
+        p2 = [inner for outer in p1 for inner in outer]
+        # repeat the trial list pp times       
         t1 = range(1,self.trials+1) * self.pp
+        # put it all together into an index
         index = pd.MultiIndex.from_arrays([p2, t1], names=['pp', 'trial'])
+        # add the index to the dataframe        
         self.table = pd.DataFrame(index=index)
     
     def get_table(self):
@@ -67,62 +76,67 @@ class Store:
         
         self.ptf = path_to_file
         
+        # load the existing HDFStore file
         if os.path.isfile(self.ptf):
             self.store = pd.HDFStore(self.ptf)
             print "Loading data from disk"
+        # or create one and run the import script (eimp)
         else:
             self.store = pd.HDFStore(self.ptf)
             print "Creating new HDFStore file in", self.ptf
-            
             self.eimp()
     
-    def eimp(self, ddir = DATADIR, pp = []):
+    def eimp(self, pp = []):
         """
-        TEXT
+        Receives a particular list of folder names (pp)
+        or generates list of all folder names in DATADIR
+        runs folder import script (dimp) each folder in the list (plist)
         """
         if not self.store.is_open:
             self.store.open()
         
         # report the directory where data is imported from
-        print 'Importing data from', ddir
+        print 'Importing data from', DATADIR
     
-        # takes PP from 'plst' otherwise imports every PP in BASEDIR
+        # takes PP from 'folderlist' otherwise imports every PP in BASEDIR
         if pp:
-            plst = [pp] if isinstance(pp, int) else pp
-            print '%d folder(s) will be imported' % (len(plst))
+            folderlist = [pp] if isinstance(pp, int) else pp
+            print '%d folder(s) will be imported' % (len(folderlist))
         else:
-            plst = [int(p) for p in os.listdir(DATADIR)]
-            print 'All %d folders will be imported' % (len(plst))
+            folderlist = [int(foldername) for foldername in os.listdir(DATADIR)]
+            print 'All %d folders will be imported' % (len(folderlist))
     
-        for p in sorted(plst):
-            print 'Parsing data of participant folder %d' % (p)
+        for foldername in sorted(folderlist):
+            print 'Parsing data of participant folder %d' % (foldername)
     
-            self.dimp(ddir, p)
+            self.dimp(foldername)
             # break # preamture break
 
-    def dimp(self, ddir, p, filename = ''):
+    def dimp(self, foldername, filename = ''):
         """
-        Expects a folder and imports specified files from that folder
-        returns a dataframe or a series of dataframe objects
-        with the delected data from the PP in that folder
+        imports data files from data folder (foldername)
+        puts a dataframe for each data file in the data folder into the store
         """  
         
-        pdir = os.path.join(ddir, str(p))  
+        pdir = os.path.join(DATADIR, str(foldername))
         
         # Take all the files in the folder
-        #(be able to select/skip specific files.)
         if not filename:
             for fname in os.listdir(pdir):
-                if ('_data' in fname) or ('_env' in fname) or ('r00' in fname):
+                # be able to skip files that contain substring from SKIP_LIST
+                if any(substring in fname for substring in SKIP_LIST):
                     continue
                 else:
+                    # generate dataframe from file
                     print 'Reading file:', fname
                     df = pd.DataFrame.from_csv(os.path.join(pdir, fname),
                                                header = 0,
                                                sep = ';').reset_index()
-                    df.columns = colheads.index
+                    df.columns = COLHEADS.index
 
                     # compute additional columns if necessary
+                    # add colums that are computed from other data in df
+
                     # tgfrontleft
                     ncol_tgap(df, 'lfdtrav', 'dtrav', 'spd', 'tgfrontleft')
                     # tgfrontright
@@ -136,11 +150,8 @@ class Store:
                     #tgrearright, neg
                     ncol_tgap(df, 'dtrav', 'rrdtrav', 'rrspd', 'tgrearright', neg=True)
                     
-                    pnr, rnr = fname_read(fname)
-                    tnr = run2trial(pnr,rnr) #find trial number for run number
-                    key = os.path.join('p%02d' % (pnr), 't%02d' % (tnr))
-                    # print 'Writing to store:', key
-                    self.store[key] = df
+                    # generate key from fname and store df under that key
+                    self.store[make_key(fname)] = df
                     # break # premature break
     
     def gdf(self, pnr, tnr):
@@ -173,27 +184,36 @@ class Store:
 #%% HELPER FUCTIONS
 
 
-def get_colheads(df, d = READ_IN_FILES):    
+def get_colheads(df):    
     """
     Get the column heads in a csv in order to rewrite them
     and load the modified csv in, later in the process
     """
-    pd.Series(df.columns.values).to_csv(os.path.join(d, 'oldheads.csv'))
-    print 'Column heads written to', os.path.join(d, 'oldheads.csv')
+    pd.Series(df.columns.values).to_csv(os.path.join(READ_IN_FILES, 'oldheads.csv'))
+    print 'Column heads written to', os.path.join(READ_IN_FILES, 'oldheads.csv')
 
-def run2trial(pnr, rnr, randi = randi):
-    return randi.ix[pnr-1,rnr-1]
+def run2trial(pnr, rnr):
+    return RANDI.ix[pnr-1,rnr-1]
     
-def trial2run(pnr, tnr, randi = randi):
-    return list(randi[randi == tnr].stack().index)[pnr-1][1]+1
+def trial2run(pnr, tnr):
+    return list(RANDI[RANDI == tnr].stack().index)[pnr-1][1]+1
     # adjusted for python indexing (pnr - 1, rnr -1)
 
 def fname_read(fname):
     pnr = int(os.path.splitext(fname)[0][2:4]) # pnr (same as p)
     rnr = int(os.path.splitext(fname)[0][-2:]) # rnr = run number
     return pnr, rnr
+
+def make_key(fname):
+    """
+    generates a key value from the filename for the HDFStore
+    """
+    pnr, rnr = fname_read(fname)
+    tnr = run2trial(pnr,rnr) #find trial number for run number
+    return os.path.join('p%02d' % (pnr), 't%02d' % (tnr))
     
-def fname_write(pnr, rnr):
+def fname_write(pnr, tnr):
+    rnr = trial2run(pnr, tnr)
     return 'pp%02dr%02d.csv' % (pnr, rnr)
     
 def ms2kmh(ms):
@@ -212,7 +232,7 @@ def markers(df):
     for line in df.values:
         if line[3] != -9999:
             marker_context_list[str(line[4])] = line
-            marker_context_list.index = colheads.index
+            marker_context_list.index = COLHEADS.index
     return marker_context_list
 
 def ncol_tgap(df, dtravlead, dtravfol, spdfol, new_col_name, neg=False):
